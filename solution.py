@@ -4,7 +4,8 @@ import math
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets  import QApplication, QWidget
+from PyQt5.QtWidgets  import QApplication, QWidget, QMainWindow
+from PyQt5 import QtWidgets
 
 y_o = 1
 x_o = -4
@@ -97,15 +98,31 @@ class Canvas(FigureCanvas):
         self.ax.grid()
 
 
+
 class AppDemo(QWidget):
     def __init__(self):
         super().__init__()
-        self.resize(1600, 800)
+        self.setGeometry(300, 300, 1000, 800)
+        self.setWindowTitle('Application')
+
+
+        text = QtWidgets.QLabel(self)
+        text.setText("Choose a  method")
+        text.move(800, 100)
+        text.adjustSize()
 
         chart = Canvas(self)
 
 
-app = QApplication(sys.argv)
-demo = AppDemo()
-demo.show()
-sys.exit(app.exec_())
+
+def application():
+    app = QApplication(sys.argv)
+    demo = AppDemo()
+
+
+
+    demo.show()
+    sys.exit(app.exec_())
+
+if __name__ == "__main__":
+    application()
