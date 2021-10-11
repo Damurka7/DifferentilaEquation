@@ -4,12 +4,18 @@ import math
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets  import QApplication, QWidget, QMainWindow
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QDialog, QVBoxLayout
 from PyQt5 import QtWidgets
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
 
 y_o = 1
 x_o = -4
 x_1 = 4
+chosenMethod = 0
+
+
 
 class InitialValueProblem:
     x_coordinates = []
@@ -17,6 +23,9 @@ class InitialValueProblem:
     y_exact = []
 
     def __init__(self, method_name, y_o, x_o, x_1, h):
+        self.x_coordinates = []
+        self.y_approximate = []
+        self.y_exact = []
         self.data = pd.DataFrame()
         self.method_name = method_name
         self.y_o = y_o
@@ -60,7 +69,7 @@ class ImprovedEulerMethod(InitialValueProblem):
 
 class EulerMethod(InitialValueProblem):
     def __init__(self, y_o, x_o, x_1, h):
-        super(EulerMethod, self).__init__("EulerMethod", y_o, x_o, x_1, h)
+        super(EulerMethod, self).__init__("Euler Method", y_o, x_o, x_1, h)
 
     def calc_y(self, x, y):
         return y + self.h * self.y_differential(x, y)
@@ -78,50 +87,98 @@ class RungeKuttaMethod(InitialValueProblem):
         return y + self.h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
 
 
-class Canvas(FigureCanvas):
-    def __init__(self, parent):
-        fig, self.ax = plt.subplots(figsize=(5, 4), dpi=150)
-        super().__init__(fig)
-        self.setParent(parent)
+class Window(QDialog):
+    method = EulerMethod( y_o, x_o, x_1, 0.1)
 
-        """ 
-        Matplotlib Script
-        """
+    def __init__(self, parent=None):
+        super(Window, self).__init__(parent)
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.button1 = QPushButton('Plot Euler')
+        self.button1.clicked.connect(self.plotEuler)
+        self.button2 = QPushButton('Plot Improved Euler')
+        self.button2.clicked.connect(self.plotImprovedEuler)
+        self.button3 = QPushButton('PlotR Runge Kutta')
+        self.button3.clicked.connect(self.plotRungeKutta)
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.button1)
+        layout.addWidget(self.button2)
+        layout.addWidget(self.button3)
+        self.setLayout(layout)
 
+    def plotEuler(self):
         method = EulerMethod(y_o, x_o, x_1, 0.1)
 
-        self.ax.plot(method.x_coordinates, method.y_exact, label="exact graph")
-        self.ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
-        self.ax.legend()
-        self.ax.set(xlabel='x-axis', ylabel='y-axis',
+        # instead of ax.hold(False)
+        self.figure.clear()
+
+        # create an axis
+        ax = self.figure.add_subplot(111)
+
+        # discards the old graph
+        # ax.hold(False) # deprecated, see above
+
+        # plot data
+        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
+        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.legend()
+        ax.set(xlabel='x-axis', ylabel='y-axis', title=method.method_name)
+
+        ax.grid()
+        # refresh canvas
+        self.canvas.draw()
+
+    def plotImprovedEuler(self):
+        method = ImprovedEulerMethod(y_o, x_o, x_1, 0.1)
+
+        # instead of ax.hold(False)
+        self.figure.clear()
+
+        # create an axis
+        ax = self.figure.add_subplot(111)
+
+        # discards the old graph
+        # ax.hold(False) # deprecated, see above
+
+        # plot data
+        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
+        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.legend()
+        ax.set(xlabel='x-efewfe', ylabel='y-efwef',
                     title=method.method_name)
-        self.ax.grid()
+        ax.grid()
+        # refresh canvas
+        self.canvas.draw()
 
+    def plotRungeKutta(self):
+        method = RungeKuttaMethod(y_o, x_o, x_1, 0.1)
 
+        # instead of ax.hold(False)
+        self.figure.clear()
 
-class AppDemo(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setGeometry(300, 300, 1000, 800)
-        self.setWindowTitle('Application')
+        # create an axis
+        ax = self.figure.add_subplot(111)
 
+        # discards the old graph
+        # ax.hold(False) # deprecated, see above
 
-        text = QtWidgets.QLabel(self)
-        text.setText("Choose a  method")
-        text.move(800, 100)
-        text.adjustSize()
-
-        chart = Canvas(self)
-
-
+        # plot data
+        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
+        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.legend()
+        ax.set(xlabel='x-axis', ylabel='y-axis',
+                    title=method.method_name)
+        ax.grid()
+        # refresh canvas
+        self.canvas.draw()
 
 def application():
     app = QApplication(sys.argv)
-    demo = AppDemo()
-
-
-
-    demo.show()
+    main = Window()
+    main.show()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
