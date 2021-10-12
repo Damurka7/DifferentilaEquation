@@ -4,7 +4,7 @@ import math
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QDialog, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QDialog, QVBoxLayout, QHBoxLayout
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -21,6 +21,8 @@ class InitialValueProblem:
     x_coordinates = []
     y_approximate = []
     y_exact = []
+    GTE = []
+    LTE = []
 
     def __init__(self, method_name, y_o, x_o, x_1, h):
         self.x_coordinates = []
@@ -37,16 +39,16 @@ class InitialValueProblem:
         self.y_approximate.append(self.y_exact[0])
         for i in range(1, len(self.x_coordinates)):
             self.y_approximate.append(self.calc_y(self.x_coordinates[i - 1], self.y_approximate[i - 1]))
-        GTE = []
+        self.GTE = []
         for i in range(len(self.x_coordinates)):
-            GTE.append(abs(self.y_exact[i] - self.y_approximate[i]))
-        LTE = []
-        LTE.append(0.0)
+           self.GTE.append(abs(self.y_exact[i] - self.y_approximate[i]))
+        self.LTE = []
+        self.LTE.append(0.0)
         for i in range(1, len(self.x_coordinates)):
-            LTE.append(abs(self.y_exact[i] - self.calc_y(self.x_coordinates[i - 1], self.y_exact[i - 1])))
+            self.LTE.append(abs(self.y_exact[i] - self.calc_y(self.x_coordinates[i - 1], self.y_exact[i - 1])))
         self.data = pd.DataFrame(
             {'x_coordinates': self.x_coordinates, 'Y-exact': self.y_exact, 'Y-' + str(self.method_name): self.y_approximate,
-             'LTE': LTE, 'GTE': GTE})
+             'LTE': self.LTE, 'GTE': self.GTE})
         print(self.data)
 
     def get_y_exact(self, x):
@@ -92,25 +94,86 @@ class Window(QDialog):
 
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
-        self.figure = plt.figure()
+        # graph of function
+        self.figure = plt.figure("function")
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
+
+        # graph of GTE
+        self.gte_fig = plt.figure("GTE")
+        self.gte_canvas = FigureCanvas(self.gte_fig)
+        self.gte_toolbar = NavigationToolbar(self.gte_canvas, self)
+        self.plotGTE()
+
+        # graph of LTE
+        self.lte_fig = plt.figure("LTE")
+        self.lte_canvas = FigureCanvas(self.lte_fig)
+        self.lte_toolbar = NavigationToolbar(self.lte_canvas, self)
+        self.plotLTE()
+
+        # adding buttons and their logic
         self.button1 = QPushButton('Plot Euler')
         self.button1.clicked.connect(self.plotEuler)
         self.button2 = QPushButton('Plot Improved Euler')
         self.button2.clicked.connect(self.plotImprovedEuler)
-        self.button3 = QPushButton('PlotR Runge Kutta')
+        self.button3 = QPushButton('Plot Runge Kutta')
         self.button3.clicked.connect(self.plotRungeKutta)
+
+        # adding all stuff to the application
+        hbox = QHBoxLayout()
         layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
-        layout.addWidget(self.button1)
-        layout.addWidget(self.button2)
-        layout.addWidget(self.button3)
+        hbox.addWidget(self.toolbar)
+        hbox.addWidget(self.canvas)
+        button_layout = QVBoxLayout()
+        button_layout.addWidget(self.button1)
+        button_layout.addWidget(self.button2)
+        button_layout.addWidget(self.button3)
+        hbox.addLayout(button_layout)
+
+        layout.addLayout(hbox)
+        error_box = QHBoxLayout()
+        error_box.addWidget(self.gte_toolbar)
+        error_box.addWidget(self.gte_canvas)
+        error_box.addWidget(self.lte_toolbar)
+        error_box.addWidget(self.lte_canvas)
+        layout.addLayout(error_box)
+
         self.setLayout(layout)
 
+    def plotLTE(self):
+        self.lte_fig.clear()
+        # create an axis
+        ax = self.lte_fig.add_subplot(111)
+
+        # discards the old graph
+
+        # plot data
+        ax.plot(self.method.x_coordinates, self.method.LTE, label="LTE graph")
+        ax.legend()
+        ax.set(xlabel='x-axis', ylabel='y-axis', title="LTE")
+
+        ax.grid()
+        # refresh canvas
+        self.lte_canvas.draw()
+
+    def plotGTE(self):
+        self.gte_fig.clear()
+        # create an axis
+        ax = self.gte_fig.add_subplot(111)
+
+        # discards the old graph
+
+        # plot data
+        ax.plot(self.method.x_coordinates, self.method.GTE, label="GTE graph")
+        ax.legend()
+        ax.set(xlabel='x-axis', ylabel='y-axis', title="GTE")
+
+        ax.grid()
+        # refresh canvas
+        self.gte_canvas.draw()
+
     def plotEuler(self):
-        method = EulerMethod(y_o, x_o, x_1, 0.1)
+        self.method = EulerMethod(y_o, x_o, x_1, 0.1)
 
         # instead of ax.hold(False)
         self.figure.clear()
@@ -119,20 +182,20 @@ class Window(QDialog):
         ax = self.figure.add_subplot(111)
 
         # discards the old graph
-        # ax.hold(False) # deprecated, see above
 
         # plot data
-        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
-        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
-        ax.set(xlabel='x-axis', ylabel='y-axis', title=method.method_name)
+        ax.set(xlabel='x-axis', ylabel='y-axis', title=self.method.method_name)
 
         ax.grid()
         # refresh canvas
+        self.plotGTE()
         self.canvas.draw()
 
     def plotImprovedEuler(self):
-        method = ImprovedEulerMethod(y_o, x_o, x_1, 0.1)
+        self.method = ImprovedEulerMethod(y_o, x_o, x_1, 0.1)
 
         # instead of ax.hold(False)
         self.figure.clear()
@@ -141,20 +204,20 @@ class Window(QDialog):
         ax = self.figure.add_subplot(111)
 
         # discards the old graph
-        # ax.hold(False) # deprecated, see above
 
         # plot data
-        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
-        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
         ax.set(xlabel='x-efewfe', ylabel='y-efwef',
-                    title=method.method_name)
+                    title=self.method.method_name)
         ax.grid()
         # refresh canvas
+        self.plotGTE()
         self.canvas.draw()
 
     def plotRungeKutta(self):
-        method = RungeKuttaMethod(y_o, x_o, x_1, 0.1)
+        self.method = RungeKuttaMethod(y_o, x_o, x_1, 0.1)
 
         # instead of ax.hold(False)
         self.figure.clear()
@@ -163,23 +226,25 @@ class Window(QDialog):
         ax = self.figure.add_subplot(111)
 
         # discards the old graph
-        # ax.hold(False) # deprecated, see above
 
         # plot data
-        ax.plot(method.x_coordinates, method.y_exact, label= "exact graph")
-        ax.plot(method.x_coordinates, method.y_approximate, label="approximation")
+        ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
         ax.set(xlabel='x-axis', ylabel='y-axis',
-                    title=method.method_name)
+                    title=self.method.method_name)
         ax.grid()
         # refresh canvas
+        self.plotGTE()
         self.canvas.draw()
+
 
 def application():
     app = QApplication(sys.argv)
     main = Window()
     main.show()
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     application()
