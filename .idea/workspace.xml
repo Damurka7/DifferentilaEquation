@@ -19,7 +19,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32bc8e08-25ce-4e6b-be4e-edcd4db16a9d" name="Default Changelist" comment="rewritten code with new classes">
+    <list default="true" id="32bc8e08-25ce-4e6b-be4e-edcd4db16a9d" name="Default Changelist" comment="logic is made (only height controller is needed)">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/solution.py" beforeDir="false" afterPath="$PROJECT_DIR$/solution.py" afterDir="false" />
     </list>
@@ -106,7 +106,14 @@
       <option name="project" value="LOCAL" />
       <updated>1633960094136</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="logic is made (only height controller is needed)">
+      <created>1634017499290</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1634017499290</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -125,32 +132,33 @@
     <MESSAGE value="base" />
     <MESSAGE value="text" />
     <MESSAGE value="rewritten code with new classes" />
-    <option name="LAST_COMMIT_MESSAGE" value="rewritten code with new classes" />
+    <MESSAGE value="logic is made (only height controller is needed)" />
+    <option name="LAST_COMMIT_MESSAGE" value="logic is made (only height controller is needed)" />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1419" height="225" key="GridCell.Tab.0.bottom" timestamp="1634017199081">
+    <state width="1419" height="225" key="GridCell.Tab.0.bottom" timestamp="1634197063936">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1419" height="225" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1634017199081" />
-    <state width="1419" height="225" key="GridCell.Tab.0.bottom/0.25.1440.806@0.25.1440.806" timestamp="1633856119939" />
-    <state width="1419" height="225" key="GridCell.Tab.0.center" timestamp="1634017199079">
+    <state width="1419" height="225" key="GridCell.Tab.0.bottom/0.0.1440.900@0.0.1440.900" timestamp="1634197063936" />
+    <state width="1419" height="225" key="GridCell.Tab.0.bottom/0.25.1440.806@0.25.1440.806" timestamp="1634189728908" />
+    <state width="1419" height="225" key="GridCell.Tab.0.center" timestamp="1634197063934">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1419" height="225" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1634017199079" />
-    <state width="1419" height="225" key="GridCell.Tab.0.center/0.25.1440.806@0.25.1440.806" timestamp="1633856119937" />
-    <state width="1419" height="225" key="GridCell.Tab.0.left" timestamp="1634017199078">
+    <state width="1419" height="225" key="GridCell.Tab.0.center/0.0.1440.900@0.0.1440.900" timestamp="1634197063934" />
+    <state width="1419" height="225" key="GridCell.Tab.0.center/0.25.1440.806@0.25.1440.806" timestamp="1634189728905" />
+    <state width="1419" height="225" key="GridCell.Tab.0.left" timestamp="1634197063933">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1419" height="225" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1634017199078" />
-    <state width="1419" height="225" key="GridCell.Tab.0.left/0.25.1440.806@0.25.1440.806" timestamp="1633856119936" />
-    <state width="1419" height="225" key="GridCell.Tab.0.right" timestamp="1634017199080">
+    <state width="1419" height="225" key="GridCell.Tab.0.left/0.0.1440.900@0.0.1440.900" timestamp="1634197063933" />
+    <state width="1419" height="225" key="GridCell.Tab.0.left/0.25.1440.806@0.25.1440.806" timestamp="1634189728904" />
+    <state width="1419" height="225" key="GridCell.Tab.0.right" timestamp="1634197063935">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state width="1419" height="225" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1634017199080" />
-    <state width="1419" height="225" key="GridCell.Tab.0.right/0.25.1440.806@0.25.1440.806" timestamp="1633856119938" />
-    <state x="320" y="187" key="Vcs.Push.Dialog.v2" timestamp="1633960099980">
+    <state width="1419" height="225" key="GridCell.Tab.0.right/0.0.1440.900@0.0.1440.900" timestamp="1634197063935" />
+    <state width="1419" height="225" key="GridCell.Tab.0.right/0.25.1440.806@0.25.1440.806" timestamp="1634189728907" />
+    <state x="320" y="187" key="Vcs.Push.Dialog.v2" timestamp="1634017504634">
       <screen x="0" y="0" width="1440" height="900" />
     </state>
-    <state x="320" y="187" key="Vcs.Push.Dialog.v2/0.0.1440.900@0.0.1440.900" timestamp="1633960099980" />
+    <state x="320" y="187" key="Vcs.Push.Dialog.v2/0.0.1440.900@0.0.1440.900" timestamp="1634017504634" />
   </component>
 </project>

@@ -4,7 +4,8 @@ import math
 import sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QDialog, QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QDialog, QVBoxLayout, QHBoxLayout, \
+    QPlainTextEdit, QLabel
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
@@ -90,7 +91,9 @@ class RungeKuttaMethod(InitialValueProblem):
 
 
 class Window(QDialog):
-    method = EulerMethod( y_o, x_o, x_1, 0.1)
+    h = 0.1
+    method = EulerMethod( y_o, x_o, x_1, h)
+    switcher = 0  # 0 - Euler, 1 - Improved Euler, 2 - Runge-Kutta
 
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
@@ -110,35 +113,72 @@ class Window(QDialog):
         self.lte_canvas = FigureCanvas(self.lte_fig)
         self.lte_toolbar = NavigationToolbar(self.lte_canvas, self)
         self.plotLTE()
+        self.plotEuler(self.h)
 
         # adding buttons and their logic
-        self.button1 = QPushButton('Plot Euler')
-        self.button1.clicked.connect(self.plotEuler)
-        self.button2 = QPushButton('Plot Improved Euler')
-        self.button2.clicked.connect(self.plotImprovedEuler)
-        self.button3 = QPushButton('Plot Runge Kutta')
-        self.button3.clicked.connect(self.plotRungeKutta)
+        self.button1 = QPushButton('\nPlot Euler\n')
+        self.button1.clicked.connect(lambda : self.plotEuler(self.h))
+        self.button2 = QPushButton('\nPlot Improved Euler\n')
+        self.button2.clicked.connect(lambda : self.plotImprovedEuler(self.h))
+        self.button3 = QPushButton('\nPlot Runge Kutta\n')
+        self.button3.clicked.connect(lambda: self.plotRungeKutta(self.h))
+        self.pushButton = QPushButton('\nEnter h:\n')
+        self.pushButton.clicked.connect(self.takeinputs)
+
+        self.label = QLabel("grid is :" + str(self.h))
 
         # adding all stuff to the application
         hbox = QHBoxLayout()
         layout = QVBoxLayout()
-        hbox.addWidget(self.toolbar)
-        hbox.addWidget(self.canvas)
+
+        toolbar_vl = QVBoxLayout()
+        toolbar_vl.addWidget(self.toolbar)
+        toolbar_vl.addWidget(self.canvas)
+        hbox.addLayout(toolbar_vl)
+
         button_layout = QVBoxLayout()
         button_layout.addWidget(self.button1)
         button_layout.addWidget(self.button2)
         button_layout.addWidget(self.button3)
+        button_layout.addWidget(self.label)
+        button_layout.addWidget(self.pushButton)
+        #button_layout.addWidget(self.text)
         hbox.addLayout(button_layout)
 
-        layout.addLayout(hbox)
         error_box = QHBoxLayout()
-        error_box.addWidget(self.gte_toolbar)
-        error_box.addWidget(self.gte_canvas)
-        error_box.addWidget(self.lte_toolbar)
-        error_box.addWidget(self.lte_canvas)
+        toolbar_vl = QVBoxLayout()
+        toolbar_vl.addWidget(self.gte_toolbar)
+        toolbar_vl.addWidget(self.gte_canvas)
+        error_box.addLayout(toolbar_vl)
+
+        toolbar_vl = QVBoxLayout()
+        toolbar_vl.addWidget(self.lte_toolbar)
+        toolbar_vl.addWidget(self.lte_canvas)
+        error_box.addLayout(toolbar_vl)
+        layout.addLayout(hbox)
         layout.addLayout(error_box)
 
         self.setLayout(layout)
+
+    def takeinputs(self):
+        grid = 0.1000
+        grid, done = QtWidgets.QInputDialog.getDouble(
+            self, 'Input Dialog', 'Enter grid size:', 0.1, 0, 5, 5)
+
+        self.label.setText("grid is :" + str(self.h))
+        if grid <=0 :
+            self.label.setText("you have inserted a grid <= 0, please re-enter the grid (grid is default now):" + str(self.h))
+            grid = 0.1
+        self.h = grid
+        if done:
+            if self.switcher == 0:
+                self.plotEuler(grid)
+            elif self.switcher == 1:
+                self.plotImprovedEuler(grid)
+            else:
+                self.plotRungeKutta(grid)
+            self.plotLTE()
+            self.plotGTE()
 
     def plotLTE(self):
         self.lte_fig.clear()
@@ -172,9 +212,9 @@ class Window(QDialog):
         # refresh canvas
         self.gte_canvas.draw()
 
-    def plotEuler(self):
-        self.method = EulerMethod(y_o, x_o, x_1, 0.1)
-
+    def plotEuler(self, h):
+        self.method = EulerMethod(y_o, x_o, x_1, h)
+        self.switcher = 0
         # instead of ax.hold(False)
         self.figure.clear()
 
@@ -192,11 +232,12 @@ class Window(QDialog):
         ax.grid()
         # refresh canvas
         self.plotGTE()
+        self.plotLTE()
         self.canvas.draw()
 
-    def plotImprovedEuler(self):
-        self.method = ImprovedEulerMethod(y_o, x_o, x_1, 0.1)
-
+    def plotImprovedEuler(self, h):
+        self.method = ImprovedEulerMethod(y_o, x_o, x_1, h)
+        self.switcher = 1
         # instead of ax.hold(False)
         self.figure.clear()
 
@@ -214,18 +255,19 @@ class Window(QDialog):
         ax.grid()
         # refresh canvas
         self.plotGTE()
+        self.plotLTE()
         self.canvas.draw()
 
-    def plotRungeKutta(self):
-        self.method = RungeKuttaMethod(y_o, x_o, x_1, 0.1)
-
+    def plotRungeKutta(self, h):
+        self.method = RungeKuttaMethod(y_o, x_o, x_1, h)
+        self.switcher = 2
         # instead of ax.hold(False)
         self.figure.clear()
 
         # create an axis
         ax = self.figure.add_subplot(111)
 
-        # discards the old graph
+
 
         # plot data
         ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
@@ -236,6 +278,7 @@ class Window(QDialog):
         ax.grid()
         # refresh canvas
         self.plotGTE()
+        self.plotLTE()
         self.canvas.draw()
 
 
