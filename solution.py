@@ -11,11 +11,8 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
-y_o = 1
-x_o = -4
-x_1 = 4
-chosenMethod = 0
 
+chosenMethod = 0
 
 
 class InitialValueProblem:
@@ -91,8 +88,12 @@ class RungeKuttaMethod(InitialValueProblem):
 
 
 class Window(QDialog):
-    h = 0.1
-    method = EulerMethod( y_o, x_o, x_1, h)
+    h = 0.01  # default size of step
+    y_o = 1
+    x_o = -4
+    x_1 = 4
+    nsteps = 800  # default
+    method = EulerMethod(y_o, x_o, x_1, h)
     switcher = 0  # 0 - Euler, 1 - Improved Euler, 2 - Runge-Kutta
 
     def __init__(self, parent=None):
@@ -122,10 +123,15 @@ class Window(QDialog):
         self.button2.clicked.connect(lambda : self.plotImprovedEuler(self.h))
         self.button3 = QPushButton('\nPlot Runge Kutta\n')
         self.button3.clicked.connect(lambda: self.plotRungeKutta(self.h))
-        self.pushButton = QPushButton('\nEnter h:\n')
+        self.pushButton = QPushButton('Enter h:')
         self.pushButton.clicked.connect(self.takeinputs)
+        self.pushButtonRange = QPushButton('Change range:')
+        self.pushButtonRange.clicked.connect(self.take_newx_newy)
 
-        self.label = QLabel("grid is :" + str(self.h))
+        self.label = QLabel("amount of steps is :" + str(self.h))
+        self.labelx0 = QLabel("x_0 :" + str(self.x_o))
+        self.labelx1 = QLabel("X :" + str(self.x_1))
+        self.labely0 = QLabel("y_0 :" + str(self.y_o))
 
         # adding all stuff to the application
         hbox = QHBoxLayout()
@@ -141,7 +147,11 @@ class Window(QDialog):
         button_layout.addWidget(self.button2)
         button_layout.addWidget(self.button3)
         button_layout.addWidget(self.label)
+        button_layout.addWidget(self.labelx0)
+        button_layout.addWidget(self.labelx1)
+        button_layout.addWidget(self.labely0)
         button_layout.addWidget(self.pushButton)
+        button_layout.addWidget(self.pushButtonRange)
         #button_layout.addWidget(self.text)
         hbox.addLayout(button_layout)
 
@@ -160,23 +170,47 @@ class Window(QDialog):
 
         self.setLayout(layout)
 
-    def takeinputs(self):
-        grid = 0.1000
-        grid, done = QtWidgets.QInputDialog.getDouble(
-            self, 'Input Dialog', 'Enter grid size:', 0.1, 0, 5, 5)
+    def take_newx_newy(self):
+        x0, done1 = QtWidgets.QInputDialog.getDouble(
+            self, 'Input Dialog', 'Enter x_0:')
+        x1, done2 = QtWidgets.QInputDialog.getDouble(
+            self, 'Input Dialog', 'Enter X:')
+        y0, done = QtWidgets.QInputDialog.getDouble(
+            self, 'Input Dialog', 'Enter y_0:')
 
-        self.label.setText("grid is :" + str(self.h))
-        if grid <=0 :
-            self.label.setText("you have inserted a grid <= 0, please re-enter the grid (grid is default now):" + str(self.h))
-            grid = 0.1
-        self.h = grid
+        self.x_o = x0
+        self.y_o = y0
+        self.x_1 = x1
+
+        self.labelx0.setText("x_0:" + str(self.x_o))
+        self.labelx0.setText("X:" + str(self.x_1))
+        self.labely0.setText("y_0:" + str(self.y_o))
+
         if done:
             if self.switcher == 0:
-                self.plotEuler(grid)
+                self.plotEuler((x1-x0)/(self.nsteps))
             elif self.switcher == 1:
-                self.plotImprovedEuler(grid)
+                self.plotImprovedEuler((x1-x0)/(self.nsteps))
             else:
-                self.plotRungeKutta(grid)
+                self.plotRungeKutta((x1-x0)/(self.nsteps))
+            self.plotLTE()
+            self.plotGTE()
+
+    def takeinputs(self):
+        steps, done = QtWidgets.QInputDialog.getInt(
+            self, 'Input Dialog', 'Enter amount of steps size:', 1, 1)
+
+        self.label.setText("amount of steps is :" + str(steps))
+
+        self.nsteps = steps
+        self.h = (self.x_1-self.x_o)/(steps)
+        if done:
+            if self.switcher == 0:
+                self.plotEuler(self.h)
+            elif self.switcher == 1:
+                self.plotImprovedEuler(self.h)
+            else:
+                self.plotRungeKutta(self.h)
             self.plotLTE()
             self.plotGTE()
 
@@ -213,7 +247,7 @@ class Window(QDialog):
         self.gte_canvas.draw()
 
     def plotEuler(self, h):
-        self.method = EulerMethod(y_o, x_o, x_1, h)
+       # self.method = EulerMethod(self.y_o, self.x_o, self.x_1, h)
         self.switcher = 0
         # instead of ax.hold(False)
         self.figure.clear()
@@ -224,7 +258,9 @@ class Window(QDialog):
         # discards the old graph
 
         # plot data
+        self.method = EulerMethod(self.y_o, self.x_o, self.x_1, 0.01)
         ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        self.method = EulerMethod(self.y_o, self.x_o, self.x_1, h)
         ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
         ax.set(xlabel='x-axis', ylabel='y-axis', title=self.method.method_name)
@@ -236,7 +272,7 @@ class Window(QDialog):
         self.canvas.draw()
 
     def plotImprovedEuler(self, h):
-        self.method = ImprovedEulerMethod(y_o, x_o, x_1, h)
+        #self.method = ImprovedEulerMethod(self.y_o, self.x_o, self.x_1, h)
         self.switcher = 1
         # instead of ax.hold(False)
         self.figure.clear()
@@ -247,10 +283,12 @@ class Window(QDialog):
         # discards the old graph
 
         # plot data
-        ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        self.method = EulerMethod(self.y_o, self.x_o, self.x_1, 0.01)
+        ax.plot(self.method.x_coordinates, self.method.y_exact, label="exact graph")
+        self.method = ImprovedEulerMethod(self.y_o, self.x_o, self.x_1, h)
         ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
-        ax.set(xlabel='x-efewfe', ylabel='y-efwef',
+        ax.set(xlabel='x-axis', ylabel='y-axis',
                     title=self.method.method_name)
         ax.grid()
         # refresh canvas
@@ -259,7 +297,7 @@ class Window(QDialog):
         self.canvas.draw()
 
     def plotRungeKutta(self, h):
-        self.method = RungeKuttaMethod(y_o, x_o, x_1, h)
+        #self.method = RungeKuttaMethod(self.y_o, self.x_o, self.x_1, self.h)
         self.switcher = 2
         # instead of ax.hold(False)
         self.figure.clear()
@@ -267,10 +305,10 @@ class Window(QDialog):
         # create an axis
         ax = self.figure.add_subplot(111)
 
-
-
         # plot data
-        ax.plot(self.method.x_coordinates, self.method.y_exact, label= "exact graph")
+        self.method = EulerMethod(self.y_o, self.x_o, self.x_1, 0.01)
+        ax.plot(self.method.x_coordinates, self.method.y_exact, label="exact graph")
+        self.method = RungeKuttaMethod(self.y_o, self.x_o, self.x_1, h)
         ax.plot(self.method.x_coordinates, self.method.y_approximate, label="approximation")
         ax.legend()
         ax.set(xlabel='x-axis', ylabel='y-axis',
