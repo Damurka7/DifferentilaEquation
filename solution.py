@@ -41,12 +41,13 @@ class InitialValueProblem:
         self.GTE = []
         for i in range(len(self.x_coordinates)):
            self.GTE.append(abs(self.y_exact[i] - self.y_approximate[i]))
+           if self.max_error < abs(self.y_exact[i] - self.y_approximate[i]):
+               self.max_error = abs(self.y_exact[i] - self.y_approximate[i])
         self.LTE = []
         self.LTE.append(0.0)
         for i in range(1, len(self.x_coordinates)):
             self.LTE.append(abs(self.y_exact[i] - self.calc_y(self.x_coordinates[i - 1], self.y_exact[i - 1])))
-            if self.max_error<abs(self.y_exact[i] - self.calc_y(self.x_coordinates[i - 1], self.y_exact[i - 1])):
-                self.max_error = abs(self.y_exact[i] - self.calc_y(self.x_coordinates[i - 1], self.y_exact[i - 1]))
+
         self.data = pd.DataFrame(
             {'x_coordinates': self.x_coordinates, 'Y-exact': self.y_exact, 'Y-' + str(self.method_name): self.y_approximate,
              'LTE': self.LTE, 'GTE': self.GTE})
@@ -98,6 +99,8 @@ class Window(QDialog):
     nsteps = 800  # default
     method = EulerMethod(y_o, x_o, x_1, h)
     switcher = 0  # 0 - Euler, 1 - Improved Euler, 2 - Runge-Kutta
+    n0 = 10
+    n = 50
 
     def __init__(self, parent=None):
         super(Window, self).__init__(parent)
@@ -110,7 +113,7 @@ class Window(QDialog):
         self.gte_fig = plt.figure("Err")
         self.gte_canvas = FigureCanvas(self.gte_fig)
         self.gte_toolbar = NavigationToolbar(self.gte_canvas, self)
-        self.plotMaxError()
+        self.plotMaxError(self.n0, self.n)
 
         # graph of LTE
         self.lte_fig = plt.figure("LTE")
@@ -130,6 +133,8 @@ class Window(QDialog):
         self.pushButton.clicked.connect(self.takeinputs)
         self.pushButtonRange = QPushButton('Change range:')
         self.pushButtonRange.clicked.connect(self.take_newx_newy)
+        self.pushButtonSteps = QPushButton('Change steps:')
+        self.pushButtonSteps.clicked.connect(self.take_steps)
 
         self.label = QLabel("amount of steps is :" + str((self.x_1-self.x_o)/self.h))
         self.labelx0 = QLabel("x_0 :" + str(self.x_o))
@@ -145,16 +150,21 @@ class Window(QDialog):
         toolbar_vl.addWidget(self.canvas)
         hbox.addLayout(toolbar_vl)
 
+        label_layout = QHBoxLayout()
+        label_layout.addWidget(self.labelx0)
+        label_layout.addWidget(self.labelx1)
+        label_layout.addWidget(self.labely0)
+
         button_layout = QVBoxLayout()
         button_layout.addWidget(self.button1)
         button_layout.addWidget(self.button2)
         button_layout.addWidget(self.button3)
         button_layout.addWidget(self.label)
-        button_layout.addWidget(self.labelx0)
-        button_layout.addWidget(self.labelx1)
-        button_layout.addWidget(self.labely0)
+        button_layout.addLayout(label_layout)
+
         button_layout.addWidget(self.pushButton)
         button_layout.addWidget(self.pushButtonRange)
+        button_layout.addWidget(self.pushButtonSteps)
         #button_layout.addWidget(self.text)
         hbox.addLayout(button_layout)
 
@@ -172,6 +182,25 @@ class Window(QDialog):
         layout.addLayout(error_box)
 
         self.setLayout(layout)
+
+    def take_steps(self):
+        step1, done1 = QtWidgets.QInputDialog.getInt(
+            self, 'Input Dialog', 'Enter N0:', 1, (int)(self.x_1-self.x_o))
+        step2, done = QtWidgets.QInputDialog.getInt(
+            self, 'Input Dialog', 'Enter N:', 1, step1)
+
+        self.n0 = step1
+        self.n = step2+1
+
+        if done:
+            if self.switcher == 0:
+                self.plotEuler((self.x_1 - self.x_o) / (self.nsteps))
+            elif self.switcher == 1:
+                self.plotImprovedEuler((self.x_1 - self.x_o) / (self.nsteps))
+            else:
+                self.plotRungeKutta((self.x_1 - self.x_o) / (self.nsteps))
+            self.plotLTE()
+            self.plotMaxError(self.n0, self.n)
 
     def take_newx_newy(self):
         x0, done1 = QtWidgets.QInputDialog.getDouble(
@@ -197,11 +226,11 @@ class Window(QDialog):
             else:
                 self.plotRungeKutta((x1-x0)/(self.nsteps))
             self.plotLTE()
-            self.plotMaxError()
+            self.plotMaxError(self.n0, self.n)
 
     def takeinputs(self):
         steps, done = QtWidgets.QInputDialog.getInt(
-            self, 'Input Dialog', 'Enter amount of steps size:', 1, 1)
+            self, 'Input Dialog', 'Enter amount of steps :', 1, 1)
         if((self.x_1-self.x_o)/(steps) > 1):
             self.label.setText("the step-size > 1, please re-enter the amount of steps :" + str(800))
             self.nsteps = steps
@@ -218,7 +247,7 @@ class Window(QDialog):
                 else:
                     self.plotRungeKutta(self.h)
                 self.plotLTE()
-                self.plotMaxError()
+                self.plotMaxError(self.n0, self.n)
 
     def plotLTE(self):
         self.lte_fig.clear()
@@ -230,7 +259,7 @@ class Window(QDialog):
         # plot data
         ax.plot(self.method.x_coordinates, self.method.LTE, label="LTE graph")
         ax.legend()
-        ax.set(xlabel='x-axis', ylabel='y-axis', title="LTE")
+        ax.set(xlabel='x-axis', ylabel='err', title="LTE")
 
         ax.grid()
         # refresh canvas
@@ -252,11 +281,11 @@ class Window(QDialog):
         # refresh canvas
         self.gte_canvas.draw()
 
-    def plotMaxError(self):
+    def plotMaxError(self, n0, n):
         err = []
         steps = []
         #met  = EulerMethod(self.y_o, self.x_o, self.x_1, 0.1)
-        for i in range(10, 50):
+        for i in range(n0, n):
             steps.append(i)
             if self.switcher == 0:
                 self.plotE((self.x_1-self.x_o)/(i))
@@ -273,9 +302,9 @@ class Window(QDialog):
         # discards the old graph
 
         # plot data
-        ax.plot(steps, err, label="err graph")
+        ax.plot(steps, err, label="max GTE graph")
         ax.legend()
-        ax.set(xlabel='x-axis', ylabel='y-axis', title="Err")
+        ax.set(xlabel='amount of steps', ylabel='err', title="max GTE")
 
         ax.grid()
         # refresh canvas
@@ -310,7 +339,7 @@ class Window(QDialog):
 
         ax.grid()
         # refresh canvas
-        self.plotMaxError()
+        self.plotMaxError(self.n0, self.n)
         self.plotLTE()
         self.canvas.draw()
 
@@ -334,7 +363,7 @@ class Window(QDialog):
                     title=self.method.method_name)
         ax.grid()
         # refresh canvas
-        self.plotMaxError()
+        self.plotMaxError(self.n0, self.n)
         self.plotLTE()
         self.canvas.draw()
 
@@ -356,7 +385,7 @@ class Window(QDialog):
                     title=self.method.method_name)
         ax.grid()
         # refresh canvas
-        self.plotMaxError()
+        self.plotMaxError(self.n0, self.n)
         self.plotLTE()
         self.canvas.draw()
 
