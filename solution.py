@@ -230,7 +230,7 @@ class Window(QDialog):
 
     def takeinputs(self):
         steps, done = QtWidgets.QInputDialog.getInt(
-            self, 'Input Dialog', 'Enter amount of steps :', 1, 1)
+            self, 'Input Dialog', 'Enter amount of steps :', 1, (int)(self.x_1-self.x_o))
         if((self.x_1-self.x_o)/(steps) > 1):
             self.label.setText("the step-size > 1, please re-enter the amount of steps :" + str(800))
             self.nsteps = steps
